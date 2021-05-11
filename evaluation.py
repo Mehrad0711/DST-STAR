@@ -13,8 +13,10 @@ from utils.data_utils import Processor
 from utils.generate_full_prediction import model_evaluation
 from utils.label_lookup import get_label_lookup_from_first_token, combine_slot_values
 
-# os.environ['CUDA_VISIBLE_DEVICES']='0'
-torch.cuda.set_device(0)
+if torch.cuda.is_available():
+    torch.cuda.set_device(0)
+else:
+    os.environ['CUDA_VISIBLE_DEVICES'] = '0'
 
 logging.basicConfig(format='%(asctime)s - %(levelname)s - %(name)s - %(message)s',
                     datefmt='%m/%d/%Y %H:%M:%S',
@@ -46,9 +48,9 @@ def main(args):
     tokenizer = BertTokenizer.from_pretrained(args.pretrained_model, use_fast=args.use_fast)
     
     if args.pred_set_name == 'test':
-        data_raw = processor.get_test_instances(args.data_dir, tokenizer)
+        data_raw = processor.get_test_instances(args.data_dir, tokenizer, args.subsample)
     elif args.pred_set_name in ['eval', 'dev']:
-        data_raw = processor.get_dev_instances(args.data_dir, tokenizer)
+        data_raw = processor.get_dev_instances(args.data_dir, tokenizer, args.subsample)
     print("# pred examples %d" % len(data_raw))
     logger.info("Data loaded!")
     
@@ -96,6 +98,7 @@ if __name__ == "__main__":
     parser.add_argument("--distance_metric", default="euclidean", type=str)
     
     parser.add_argument("--num_self_attention_layer", default=6, type=int)
+    parser.add_argument("--subsample", default=2000000000, type=int)
     
     parser.add_argument("--pred_set_name", default='test', type=str)
     

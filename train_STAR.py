@@ -18,8 +18,10 @@ from utils.data_utils import Processor, MultiWozDataset
 from utils.eval_utils import model_evaluation
 from utils.label_lookup import get_label_lookup_from_first_token, combine_slot_values
 
-os.environ['CUDA_VISIBLE_DEVICES'] = '0'
-# torch.cuda.set_device(0)
+if torch.cuda.is_available():
+    torch.cuda.set_device(0)
+else:
+    os.environ['CUDA_VISIBLE_DEVICES'] = '0'
 
 logging.basicConfig(format='%(asctime)s - %(levelname)s - %(name)s - %(message)s',
                     datefmt='%m/%d/%Y %H:%M:%S',
