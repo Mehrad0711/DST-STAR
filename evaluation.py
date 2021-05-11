@@ -43,7 +43,7 @@ def main(args):
     print('****num_labels****:', num_labels)
     logger.info(slot_meta)
     
-    tokenizer = BertTokenizer.from_pretrained(args.pretrained_model)
+    tokenizer = BertTokenizer.from_pretrained(args.pretrained_model, use_fast=args.use_fast)
     
     if args.pred_set_name == 'test':
         data_raw = processor.get_test_instances(args.data_dir, tokenizer)
@@ -85,6 +85,7 @@ if __name__ == "__main__":
     # Required parameters
     parser.add_argument("--data_dir", default='data/mwz2.1', type=str)
     parser.add_argument("--pretrained_model", default='bert-base-uncased', type=str)
+    parser.add_argument("--use_fast", action='store_true')
     parser.add_argument("--save_dir", default='out-bert/exp', type=str)
     parser.add_argument("--attn_type", default='softmax', type=str)
     parser.add_argument("--dropout_prob", default=0.1, type=float)

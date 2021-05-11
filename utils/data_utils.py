@@ -3,8 +3,6 @@ import json
 import csv
 from torch.utils.data import Dataset
 import torch
-import random
-import re
 import os
 from copy import deepcopy
 
@@ -23,18 +21,26 @@ def slot_recovery(slot):
 class Processor(object):
     def __init__(self, config):
         # MultiWOZ dataset
-        if "data/mwz" in config.data_dir:
+        if "mwz" in config.data_dir:
             fp_ontology = open(os.path.join(config.data_dir, "ontology-modified.json"), "r")
             ontology = json.load(fp_ontology)
             fp_ontology.close()
+        elif "risawoz" in config.data_dir:
+            fp_ontology = open(os.path.join(config.data_dir, "ontology_translated.json"), "r")
+            risa_ontology = json.load(fp_ontology)
+            ontology = {}
+            for key, type_vals in risa_ontology.items():
+                for type, values in type_vals.items():
+                    ontology[key + '-' + type] = values
+            fp_ontology.close()
         else:
             raise NotImplementedError()
-
+        
         self.ontology = ontology
         self.slot_meta = list(self.ontology.keys()) # must be sorted
         self.num_slots = len(self.slot_meta)
         self.slot_idx = [*range(0, self.num_slots)]
-        self.label_list = [self.ontology[slot] for slot in self.slot_meta]
+        self.label_list = [list(map(lambda key: str(key), self.ontology[slot])) for slot in self.slot_meta]
         self.label_map = [{label: i for i, label in enumerate(labels)} for labels in self.label_list]
         self.config = config
         self.domains = sorted(list(set([slot.split("-")[0] for slot in self.slot_meta])))
@@ -62,22 +68,24 @@ class Processor(object):
                 lines.append(line)
             return lines
 
-    def get_train_instances(self, data_dir, tokenizer):
-        return self._create_instances(self._read_tsv(os.path.join(data_dir, "train.tsv")), tokenizer)
+    def get_train_instances(self, data_dir, tokenizer, subsample):
+        return self._create_instances(self._read_tsv(os.path.join(data_dir, "train.tsv")), tokenizer, subsample)
 
-    def get_dev_instances(self, data_dir, tokenizer):
-        return self._create_instances(self._read_tsv(os.path.join(data_dir, "dev.tsv")), tokenizer)
+    def get_dev_instances(self, data_dir, tokenizer, subsample):
+        return self._create_instances(self._read_tsv(os.path.join(data_dir, "dev.tsv")), tokenizer, subsample)
 
-    def get_test_instances(self, data_dir, tokenizer):
-        return self._create_instances(self._read_tsv(os.path.join(data_dir, "test.tsv")), tokenizer)
+    def get_test_instances(self, data_dir, tokenizer, subsample):
+        return self._create_instances(self._read_tsv(os.path.join(data_dir, "test.tsv")), tokenizer, subsample)
 
-    def _create_instances(self, lines, tokenizer):
+    def _create_instances(self, lines, tokenizer, subsample):
         instances = []
         last_uttr = None
         last_dialogue_state = {}
         history_uttr = []
         
         for (i, line) in enumerate(lines):
+            if i >= subsample:
+                break
             dialogue_idx = line[0]
             turn_idx = int(line[1])
             is_last_turn = (line[2] == "True")
@@ -95,7 +103,7 @@ class Processor(object):
                 last_uttr = ""
                 for slot in self.slot_meta:
                     last_dialogue_state[slot] = "none"
-                
+            
             turn_only_label = [] # turn label
             for s, slot in enumerate(self.slot_meta):
                 if last_dialogue_state[slot] != turn_dialogue_state[slot]:
@@ -117,6 +125,7 @@ class Processor(object):
             instances.append(instance)
             
             last_dialogue_state = turn_dialogue_state
+            
             
         return instances
             
