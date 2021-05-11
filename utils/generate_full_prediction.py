@@ -6,7 +6,7 @@ import os
 from copy import deepcopy
 
 
-def model_evaluation(model, test_data, tokenizer, slot_meta, label_list, epoch, is_gt_p_state=False):
+def model_evaluation(model, test_data, tokenizer, slot_meta, label_list, epoch, is_gt_p_state=False, pred_set_name='test'):
     model.eval()
     
     loss = 0.
@@ -79,7 +79,7 @@ def model_evaluation(model, test_data, tokenizer, slot_meta, label_list, epoch, 
     
     if not os.path.exists("pred-evaluation"):
         os.makedirs("pred-evaluation")
-    json.dump(results, open('pred-evaluation/preds_full_%d.json' % epoch, 'w'), indent=4)
+    json.dump(results, open(f'pred-evaluation/{pred_set_name}_preds_full_%d.json' % epoch, 'w'), indent=4)
 
     scores = {'epoch': epoch, 'loss': loss, 'joint_acc': joint_acc_score, 'joint_turn_acc': joint_turn_acc_score, 'slot_acc': slot_acc_score, 'ave_slot_acc': np.mean(slot_acc_score)}
     
