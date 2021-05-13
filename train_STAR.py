@@ -4,6 +4,7 @@ import argparse
 import logging
 import os
 import random
+import shutil
 
 import numpy as np
 import torch
@@ -33,6 +34,8 @@ def main(args):
     def worker_init_fn(worker_id):
         np.random.seed(args.random_seed + worker_id)
     
+    if os.path.exists(args.save_dir):
+        shutil.rmtree(args.save_dir)
     if not os.path.exists(args.save_dir):
         os.makedirs(args.save_dir)
     
